@@ -9,11 +9,10 @@ A Java-compatible HTTP client with VersionOne-specific methods, implemented in S
     
     val creds = new BasicOAuthToken(...)
     val settings = new OAuth2Settings(creds, ...)
-    val log = LoggerFactory getLogger "main"
     val logAdapter = new SimpleLogger {
-      def error(msg:String) = log error msg
-      def debug(msg:String) = log debug msg
-      def info(msg:String) = log info msg
+      def error(msg:String) = println(s"ERROR: $msg")
+      def debug(msg:String) = println(s"DEBUG: $msg")
+      def info(msg:String) = println(s"INFO: $msg")
     }
     val v1 = new V1HttpClient(settings, logAdapter, "MyTest/1.0")
     val results =  v1 DoQuery """
