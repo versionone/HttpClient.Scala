@@ -37,7 +37,7 @@ object V1XML {
     val assets  = for (asset <- document \ "Asset") yield {
       
       val attrs = for (attr <- asset \ "Attribute") yield {
-        (attr \ "@name").text -> (maybeList(attr.text) ++ (for (value <- attr \ "@Value")  yield value.text))
+        (attr \ "@name").text -> (maybeList(attr.text) ++ (for (value <- attr \ "Value")  yield value.text))
         }
         
       val rels = for (rel <- asset \ "Relation") yield {
