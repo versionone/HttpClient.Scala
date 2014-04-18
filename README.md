@@ -4,8 +4,8 @@ HttpClient.Scala
 A Java-compatible HTTP client with VersionOne-specific methods, implemented in Scala.
 
 
-    import com.versionone.httpclient.*
-    import org.apache.oltu.oauth2.*
+    import com.versionone.httpclient._
+    import org.apache.oltu.oauth2._
     
     val creds = new BasicOAuthToken(...)
     val settings = new OAuth2Settings(creds, ...)
