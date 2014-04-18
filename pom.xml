@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.versionone</groupId>
   <artifactId>httpclient</artifactId>
-  <version>0.9.20140418-SNAPSHOT</version>
+  <version>0.9.201404181-SNAPSHOT</version>
   <name>${project.artifactId}</name>
   <description>My wonderfull scala app</description>
   <inceptionYear>2010</inceptionYear>
