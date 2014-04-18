@@ -9,9 +9,9 @@ A Java-compatible HTTP client with VersionOne-specific methods, implemented in S
     
     val creds = new BasicOAuthToken(...)
     val settings = new OAuth2Settings(creds, ...)
-    val log = LoggerFactory.getLogger("main")
+    val log = LoggerFactory getLogger "main"
     val v1 = new V1HttpClient(settings, log, "MyTest/1.0")
-    val results =  v1.DoQuery("""
+    val results =  v1 DoQuery """
       from: Member
       select:
         - Name
