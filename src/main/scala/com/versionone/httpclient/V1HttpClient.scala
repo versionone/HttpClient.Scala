@@ -32,7 +32,7 @@ trait V1Methods extends HttpClient
 /**
  * An HTTP client with VersionOne specific methods
  */
-class V1HttpClient(settings: OAuth2Settings, log:Logger, agent: String)
+class V1HttpClient(settings: OAuth2Settings, log:SimpleLogger, agent: String)
   extends OAuth2HttpClient(settings, log, agent)
   with V1Methods
   

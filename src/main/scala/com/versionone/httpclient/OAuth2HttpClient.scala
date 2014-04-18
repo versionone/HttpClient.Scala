@@ -22,6 +22,14 @@ trait HttpClient {
   def DoRequest(pathSuffix:String, postBody:String): (Int, String, String => String)
 }
 
+
+trait SimpleLogger {
+  def debug(s:String) : Unit
+  def info(s:String) : Unit
+  def error(s:String) : Unit
+}
+
+
 /**
  * Settings for the OAuth2HttpClient
  */
@@ -40,7 +48,7 @@ case class OAuth2Settings(
  * If made, the second try is returned without interception.
  * This implementation does not persistently store the refreshed token, but will reuse it for the lifetime of the instance. 
  */
-class OAuth2HttpClient(settings:OAuth2Settings, log:Logger, userAgent:String) extends HttpClient  {
+class OAuth2HttpClient(settings:OAuth2Settings, log:SimpleLogger, userAgent:String) extends HttpClient  {
   val oAuthClient = new OAuthClient(new URLConnectionClient())
   log debug s"new OAuth2HttpClient($settings, $userAgent)"
   var creds:OAuthToken = settings.creds
@@ -48,6 +56,8 @@ class OAuth2HttpClient(settings:OAuth2Settings, log:Logger, userAgent:String) ex
   
   private def TryHttp(creds:OAuthToken, method:String, absUrl:String, body:String) = {
     log info s"TryHttp $method $absUrl ${if(body!=null) s"body:\n$body" else ""}"
+    if(body!=null)
+      log debug s"TryHttp body:\n$body"
     val bearerClientRequest =
       new OAuthBearerClientRequest(absUrl)
         .setAccessToken(creds.getAccessToken())
@@ -81,8 +91,8 @@ class OAuth2HttpClient(settings:OAuth2Settings, log:Logger, userAgent:String) ex
         OAuthClientRequest
           .tokenLocation(settings.tokenUri)
           .setGrantType(GrantType.REFRESH_TOKEN)
-          .setClientId(settings.clientId) //TODO: get CA to put this on the interface
-          .setClientSecret(settings.clientSecret) //TODO: get CA to put this on the interface
+          .setClientId(settings.clientId) 
+          .setClientSecret(settings.clientSecret)
           .setRedirectURI(settings.redirecthUri)
           .setRefreshToken(creds.getRefreshToken())
           .buildBodyMessage()
