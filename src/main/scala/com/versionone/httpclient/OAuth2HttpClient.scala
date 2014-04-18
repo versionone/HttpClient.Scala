@@ -22,25 +22,16 @@ trait HttpClient {
   def DoRequest(pathSuffix:String, postBody:String): (Int, String, String => String)
 }
 
-
+/**
+ * A simple log interface we use instead of requiring
+ * the user to import a logging library of our choice.
+ */
 trait SimpleLogger {
   def debug(s:String) : Unit
   def info(s:String) : Unit
   def error(s:String) : Unit
 }
 
-
-/**
- * Settings for the OAuth2HttpClient
- */
-case class OAuth2Settings(
-    creds : OAuthToken,
-    clientId : String,
-    clientSecret : String,
-    baseUri : String,
-    tokenUri : String,
-    authUri : String,
-    redirecthUri : String )
 
 /**
  * An OAuth2 refresh-capable HTTP client based on Apache Oltu
@@ -93,7 +84,7 @@ class OAuth2HttpClient(settings:OAuth2Settings, log:SimpleLogger, userAgent:Stri
           .setGrantType(GrantType.REFRESH_TOKEN)
           .setClientId(settings.clientId) 
           .setClientSecret(settings.clientSecret)
-          .setRedirectURI(settings.redirecthUri)
+          .setRedirectURI(settings.redirectUri)
           .setRefreshToken(creds.getRefreshToken())
           .buildBodyMessage()
       creds = oAuthClient.accessToken(request).getOAuthToken()
