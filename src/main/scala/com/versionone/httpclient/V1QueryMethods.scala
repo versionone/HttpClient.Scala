@@ -24,7 +24,7 @@ trait JsonHttpClient extends HttpClient {
    */
   def DoJson(pathSuffix: String, body: String) = {
     val (status, content, getParam) = DoRequest(pathSuffix, body)
-    (status, scala.util.parsing.json.JSON.parseFull(content), getParam)
+    (status, JSON.parseFull(content), getParam)
   }
 }
 
