@@ -5,7 +5,6 @@
 	<artifactId>httpclient</artifactId>
 	<version>0.9.20140419-SNAPSHOT</version>
 	<name>${project.artifactId}</name>
-	<description>My wonderfull scala app</description>
 	<inceptionYear>2014-04-18</inceptionYear>
 	<licenses>
 		<license>
@@ -126,4 +125,5 @@
 		</plugins>
 	</build>
 	<url>https://github.com/versionone/HttpClient.Scala</url>
+	<description>OAuth2-using HttpClient specialized for VersionOne endpoints</description>
 </project>
