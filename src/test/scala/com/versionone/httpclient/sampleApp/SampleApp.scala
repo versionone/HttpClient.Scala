@@ -4,29 +4,29 @@ import com.versionone.httpclient._
 import org.slf4j.LoggerFactory
 
 object SampleApp {
+  
   def main(args: Array[String]): Unit = {
-    
-    val settings = OAuth2Settings.fromFiles(
+    val settings = OAuth2Settings fromFiles (
         "client_secrets.json",
         "stored_credentials.json" )
         
-    val l4jlog = LoggerFactory.getLogger("SampleApp")
-    val logAdapter = new SimpleLogger {
-      def debug(s:String) = l4jlog debug s
-      def info(s:String) = l4jlog info s
-      def error(s:String) = l4jlog error s
+    val logAdapter = new SimpleLogger() {
+      val log = LoggerFactory getLogger "SampleApp"
+      def debug(s:String) = log debug s
+      def info(s:String) = log info s
+      def error(s:String) = log error s
     }
     
-    val client = new V1HttpClient(settings, logAdapter, "V1Http-Sample/1.0")
+    val v1 = new V1HttpClient(settings, logAdapter, "V1Http-ScalaSample/1.0")
     
-    val me = client.Query("""
+    val me = v1 Query """
       from: Member
       select:
         - Name
       where:
         isSelf: true
-      """)
+      """
+      
     println(s"$me")
   }
-
 }
