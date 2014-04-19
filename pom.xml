@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.versionone</groupId>
 	<artifactId>httpclient</artifactId>
-	<version>0.9.20140419-SNAPSHOT</version>
+	<version>0.9.20140420-SNAPSHOT</version>
 	<name>${project.artifactId}</name>
 	<inceptionYear>2014-04-18</inceptionYear>
 	<licenses>
