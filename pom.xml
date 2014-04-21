@@ -1,15 +1,24 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.versionone</groupId>
-	<artifactId>httpclient</artifactId>
-	<version>0.9.20140420-SNAPSHOT</version>
+	<groupId>com.versionone.httpclient</groupId>
+	<artifactId>versionone-httpclient</artifactId>
+	<version>1.0</version>
 	<name>${project.artifactId}</name>
-	<inceptionYear>2014-04-18</inceptionYear>
+	<inceptionYear>2014</inceptionYear>
+	<url>https://github.com/versionone/HttpClient.Scala</url>
+	<description>OAuth2-using HttpClient specialized for VersionOne endpoints</description>
+	<organization>
+		<name>VersionOne, Inc.</name>
+		<url>http://versionone.com/</url>
+	</organization>
+	<scm>
+		<url>https://github.com/versionone/HttpClient.Scala</url>
+	</scm>
 	<licenses>
 		<license>
-			<name>My License</name>
-			<url>http://....</url>
+			<name>Modified BSD (3 clause) License</name>
+			<url>https://github.com/versionone/HttpClient.Scala/blob/master/LICENSE.md</url>
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
@@ -27,6 +36,12 @@
 			<groupId>org.scala-lang</groupId>
 			<artifactId>scala-library</artifactId>
 			<version>${scala.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.oltu.oauth2</groupId>
+			<artifactId>org.apache.oltu.oauth2.client</artifactId>
+			<version>1.0.0</version>
 		</dependency>
 
 		<!-- Test -->
@@ -48,11 +63,6 @@
 			<version>2.0.M6-SNAP8</version>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.apache.oltu.oauth2</groupId>
-			<artifactId>org.apache.oltu.oauth2.client</artifactId>
-			<version>1.0.0</version>
-		</dependency>
 	</dependencies>
 
 	<build>
@@ -70,6 +80,7 @@
 					</formats>
 				</configuration>
 			</plugin>
+
 
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
@@ -107,6 +118,7 @@
 					</execution>
 				</executions>
 			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
@@ -122,8 +134,7 @@
 					</includes>
 				</configuration>
 			</plugin>
+
 		</plugins>
 	</build>
-	<url>https://github.com/versionone/HttpClient.Scala</url>
-	<description>OAuth2-using HttpClient specialized for VersionOne endpoints</description>
 </project>

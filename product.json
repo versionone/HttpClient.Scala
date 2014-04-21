@@ -1,0 +1,62 @@
+{
+    "id": "VersionOne.HttpClient.Scala",
+    "titleSection": {
+        "name": "VersionOne Java/Scala Http Client",
+        "shortDescription": "An HTTP client supporting OAuth2 and VersionOne's REST XML and Query/JSON data formats",
+        "pricing": "Free",
+        "support": {
+            "text": "VersionOne",
+            "href": "http://support.versionone.com/home"
+        }
+    },
+    "descriptionSection": {
+        "description": "The VersionOne HTTP client is an OAuth2-capable client based on Apache Oltu, and specialized with methods for packing and unpacking the VersionOne endpoint XML and JSON formats."
+    },
+    "linksSection": [
+        {
+            "type": "download",
+            "title": "SDK.Java APIClient on Maven Central",
+            "href": "http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22VersionOne HttpClient.Scala%22"
+        },
+        {
+            "type": "documentation",
+            "title": "README",
+            "href": "https://github.com/versionone/HttpClient.Scala/blob/master/README.md"
+        },
+        {
+            "type": "source",
+            "title": "GitHub Project for Source Code and Issues",
+            "href": "https://github.com/versionone/HttpClient.Scala"
+        },
+        {
+            "type": "license",
+            "title": "Modified BSD (3 clause) License",
+            "href": "https://github.com/versionone/HttpClient.Scala/blob/master/LICENSE.md"
+        }
+    ],
+    "updatesSection": {
+        "updates": [
+            {
+                "date": "2014-04-21T00:00:00.000Z",
+                "description": "Spring 2012",
+                "version": "0.9",
+                "releaseNotes": "Initial release of VersionOne HttpClient library.",
+                "qualityBand": "sapling"
+            },
+       ],
+        "qualityBands": {
+            "seed": {
+                "shortDescription": "The initial idea of a product. May not be stable code.",
+                "href": "https://github.com/versionone/VersionOne.SDK.Java.APIClient/blob/master/CONTRIBUTING.md#seed"
+            },
+            "sapling": {
+                "shortDescription": "The product is undergoing rapid growth. The code works but expect major changes.",
+                "href": "https://github.com/versionone/VersionOne.SDK.Java.APIClient/blob/master/CONTRIBUTING.md#sapling"
+            },
+            "mature": {
+                "shortDescription": "The product is stable. The code will continue to evolve with minimum breaking changes.",
+                "href": "https://github.com/versionone/VersionOne.SDK.Java.APIClient/blob/master/CONTRIBUTING.md#mature"
+            }
+        }
+    }
+}
