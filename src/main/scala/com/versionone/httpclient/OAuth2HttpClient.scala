@@ -39,11 +39,13 @@ trait SimpleLogger {
 class OAuth2HttpClient(settings: OAuth2Settings, log: SimpleLogger, userAgent: String) extends HttpClient {
   val oAuthClient = new OAuthClient(new URLConnectionClient())
   log debug s"new OAuth2HttpClient($settings, $userAgent)"
-  var creds: OAuthToken = settings.creds
-  log debug "Initial OAuth2 creds set from provided settings"
+  var creds: OAuthToken = settings.creds match {
+    case None => null
+    case Some(creds) => creds
+  }
 
   private def TryHttp(creds: OAuthToken, method: String, absUrl: String, body: String) = {
-    log info s"TryHttp $method $absUrl ${if (body != null) s"body:\n$body" else ""}"
+    log info s"TryHttp $method $absUrl}"
     if (body != null)
       log debug s"TryHttp body:\n$body"
     val bearerClientRequest =
@@ -54,7 +56,6 @@ class OAuth2HttpClient(settings: OAuth2Settings, log: SimpleLogger, userAgent: S
     if (method == "POST") {
       bearerClientRequest.setBody(if (body == null) "" else body)
     }
-    log debug s"about to make request ${(bearerClientRequest.getLocationUri(), bearerClientRequest.getHeaders(), bearerClientRequest.getBody())}"
     val response = oAuthClient.resource(bearerClientRequest, method, classOf[OAuthResourceResponse])
     log info s"TryHttp resp code ${response.getResponseCode()}."
     log debug s"TryHttp resp body:\n${response.getBody()}"

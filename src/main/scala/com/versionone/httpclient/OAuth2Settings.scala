@@ -9,7 +9,7 @@ import scala.io.Source
  * Settings for the OAuth2HttpClient
  */
 case class OAuth2Settings(
-  creds: OAuthToken,
+  creds: Option[OAuthToken],
   clientId: String,
   clientSecret: String,
   baseUri: String,
@@ -22,15 +22,18 @@ object OAuth2Settings {
   def parseFile(filename: String) = JSON.parseFull(Source.fromFile(filename).mkString)
 
   def readCreds(storedCreds: String) = {
-    val Some(JMap(creds)) = parseFile(storedCreds)
-    val JStr(scope) = creds("scope")
-    val JStr(refreshToken) = creds("refresh_token")
-    val JStr(accessToken) = creds("access_token")
-    new BasicOAuthToken(
-      accessToken,
-      600, // TODO see if this is used anywhere and get rid of magic number
-      refreshToken,
-      scope)
+    for {
+      Some(JMap(creds)) <- parseFile(storedCreds)
+      JStr(scope) = creds("scope")
+      JStr(refreshToken) = creds("refresh_token")
+      JStr(accessToken) = creds("access_token")
+    } yield
+      new BasicOAuthToken(
+        accessToken,
+        600, // TODO see if this is used anywhere and get rid of magic number
+        refreshToken,
+        scope
+        )
   }
 
   def fromFiles(clientSecrets: String, storedCreds: String) = {
