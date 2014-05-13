@@ -26,36 +26,35 @@ object V1Oauth2Api {
         val auth = new sun.misc.BASE64Encoder().encode((username + ":" + password).getBytes())
         conn.setRequestProperty("Authorization", "Basic " + auth); 
         conn.setRequestMethod("GET")
-        def getBody() = Source.fromInputStream(conn.getInputStream()).mkString
         if (conn.getResponseCode() != HttpURLConnection.HTTP_OK)
-          Failure(conn.getResponseCode(), conn.getResponseMessage(), getBody())
+          Failure(conn.getResponseCode(), conn.getResponseMessage(), Source.fromInputStream(conn.getErrorStream()).mkString)
         else
-          Success(getBody())
+          Success(Source.fromInputStream(conn.getInputStream()).mkString)
       }
     }
   }
   
-  def post(url:String, postBody:String, username:String, password:String) = {
+  def post(url:String, postBody:String, contentType:String, username:String, password:String) = {
     new URL(url).openConnection() match {
       case conn : HttpURLConnection => {
         val auth = new sun.misc.BASE64Encoder().encode((username + ":" + password).getBytes())
         conn.setRequestProperty("Authorization", "Basic " + auth); 
+        conn.setRequestProperty("Content-Type", contentType); 
         conn.setDoOutput(true)
         conn.setRequestMethod("POST")
         val writer = new java.io.OutputStreamWriter(conn.getOutputStream())
         writer.write(postBody)
         writer.close()
-        def getBody() = Source.fromInputStream(conn.getInputStream()).mkString
         if (conn.getResponseCode() != HttpURLConnection.HTTP_OK)
-          Failure(conn.getResponseCode(), conn.getResponseMessage(), getBody())
+          Failure(conn.getResponseCode(), conn.getResponseMessage(), Source.fromInputStream(conn.getErrorStream()).mkString)
         else
-          Success(getBody())
+          Success(Source.fromInputStream(conn.getInputStream()).mkString)
       }
     }
   }
   
   
-  def makeSecrets(baseurl:String, username:String, password:String) : Option[Map[String,Any]] = {
+  def makeSecrets(baseurl:String, username:String, password:String) : String = {
     val body = s"""{
       "client_name": "Integration ${new java.util.Date().toGMTString()}",
       "client_type": "Public",
@@ -63,21 +62,12 @@ object V1Oauth2Api {
       "redirect_uri": "urn:ietf:wg:oauth:2.0:oob"
       }"""
     
-    post(baseurl + "/ClientRegistration.mvc/register", body, username, password) match {
+    post(baseurl + "/ClientRegistration.mvc/Register", body, "application/json", username, password) match {
       case Failure(code, msg, respbody) =>
         sys error s"Unable to register client. $msg\n$respbody"
-      case Success(respbody) =>
-        for {
-          Some(JMap(response)) <- JSON.parseFull(respbody)
-          JStr(client_id) = response("client_id")
-          JStr(client_name) = response("client_name")
-          JStr(redirect_uri) = response("redirect_uri")
-          JStr(client_secret) = response("client_secret")
-          JStr(server_base_uri) = response("server_base_uri")
-          JStr(auth_uri) = response("auth_uri")
-          JStr(token_uri) = response("token_uri")
-        } yield
-          Map("installed" -> response)
+      case Success(respbody) => {
+        respbody
+      }
     }
   }
   
@@ -86,19 +76,32 @@ object V1Oauth2Api {
       case Failure(code, msg, txt) =>
         sys error s"Unable to reach grant url $grantUrl: $code $msg\n$txt"
       case Success(txt) => {
-          val x = xml.XML loadString txt
-          val action = x \\ "form" \ "@action"
-          val auth_request = x \\ "input" \ "@value"
-          val postBody = s"""allow=true&auth_request=$auth_request"""
-          post(baseUrl + action, postBody, username, password) match {
-            case Failure(code, msg, txt) =>
-              sys error s"Unable to post auth code to $action: $code $msg\n$txt"
-            case Success(txt) => {
-              val x = xml.XML loadString txt
-              val code = (x \\ "textarea").text
-              code
+        val authRegex = """<input type="hidden" name="auth_request" value="(.*)"/>""".r
+        val actionRegex = """action='(.*)'""".r
+        //val x = xml.XML loadString s"""<?xml version="1.0" encoding="utf-8"?>\n$txt"""
+        val action = actionRegex findFirstIn txt match {
+          case Some(actionRegex(action)) => action
+        }
+        //val action = x \\ "form" \ "@action"
+        val auth_request = authRegex findFirstIn txt match {
+          case Some(authRegex(auth)) => auth
+        }
+        //val auth_request = x \\ "input" \ "@value"
+        val postBody = s"""allow=true&auth_request=${java.net.URLEncoder.encode(auth_request)}"""
+        val postUrl = baseUrl + action
+        post(postUrl, postBody, "application/x-www-form-urlencoded", username, password) match {
+          case Failure(code, msg, txt) =>
+            sys error s"Unable to post auth code to $action: $code $msg\n$txt"
+          case Success(txt) => {
+            val codeRegex = """<textarea id="successcode">(.*)</textarea>""".r
+            //val x = xml.XML loadString txt
+            //val code = (x \\ "textarea").text
+            val code = codeRegex findFirstIn txt match {
+              case Some(codeRegex(code)) => code
             }
+            code
           }
+        }
       }
     }
   }
@@ -132,6 +135,23 @@ object GrantTool extends App {
   //   get scope from command line
   assert(myargs.scopes != Nil, "Must provide at least one scope to request.")
   
+  (myargs.username, myargs.password, myargs.url) match {
+    case (Some(user), Some(pass), Some(url)) =>  {
+      val secrets = V1Oauth2Api.makeSecrets(url, user, pass)
+      val s = new java.io.PrintWriter(myargs.secrets)
+      s.write(s"""{
+        "installed":
+          $secrets
+        }""")
+      s.close()
+    }
+    case (None, None, None) =>
+      println("Skipping permitted app creation")
+    case _ =>
+      sys error "Username, password, and url all required for automatic permitted app creation"
+  }
+  
+  
   //   read client secrets
   val maybeSettings = com.versionone.httpclient.OAuth2Settings.fromFiles(myargs.secrets, myargs.creds)
 
@@ -145,10 +165,21 @@ object GrantTool extends App {
         .setResponseType("code")
         .buildQueryMessage()
         .getLocationUri()    
-    println(s"Please visit:\n\n$grantUrl\n\nAnd paste the code you receive here:\n")
-
-    //   await pasted auth code
-    val code = System.console().readLine()
+        
+    val code = (myargs.username, myargs.password, myargs.url) match {
+      case (Some(user), Some(pass), Some(url)) => {
+        val uurrll = new URL(url)
+        val base = uurrll.getProtocol() + "://" + uurrll.getHost()
+        println(s"trying to get grant form from $grantUrl")
+        V1Oauth2Api.getGrantCode(base.toString(), grantUrl, user, pass)
+      }
+      case (None, None, None) => {
+        println("Skipping auto grant creation")
+        println(s"Please visit:\n\n$grantUrl\n\nAnd paste the code you receive here:\n")
+        //   await pasted auth code
+        System.console().readLine()
+      }
+    }        
     println("\nCode received. Attemping to trade for access token...")
     
     //   contact server token endpoint
