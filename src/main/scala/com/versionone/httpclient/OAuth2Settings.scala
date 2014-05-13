@@ -51,9 +51,19 @@ object OAuth2Settings {
       JStr(authUri) = installed("auth_uri")
       JStr(tokenUri) = installed("token_uri")
       JStr(serverBase) = installed("server_base_uri")
-      JList(redirectUris) = installed("redirect_uris")
     } yield {
-      val redirs = for (JStr(url) <- redirectUris) yield url
+      val redir =
+        if (installed.contains("redirect_uris")) {
+    	  val redirs = for {
+    	    JList(urls) <- List(installed("redirect_uris"))
+    	    JStr(url) <- urls
+    	    } yield url
+    	  redirs.head
+    	} else {
+    	  installed("redirect_uri") match {
+    	    case s : String => s
+    	  }
+    	}
       OAuth2Settings(
         None,
         clientId,
@@ -61,7 +71,7 @@ object OAuth2Settings {
         serverBase,
         tokenUri,
         authUri,
-        redirs.head
+        redir
         )
     }
   }
