@@ -30,40 +30,45 @@ object GrantTool extends App {
   assert(myargs.scopes != Nil, "Must provide at least one scope to request.")
   
   //   read client secrets
-  val settings = com.versionone.httpclient.OAuth2Settings.fromFiles(myargs.secrets, myargs.creds)
-  
-  //   print grant url to console
-  val grantUrl = request.OAuthClientRequest
-      .authorizationLocation(settings.authUri)
-      .setClientId(settings.clientId)
-      .setRedirectURI(settings.redirectUri)
-      .setScope("")
-      .buildQueryMessage()
-      .getLocationUri()    
-  printf(s"Please paste the code from $grantUrl")
+  val maybeSettings = com.versionone.httpclient.OAuth2Settings.fromFiles(myargs.secrets, myargs.creds)
 
-  //   await pasted auth code
-  val code = System.console().readLine()
+  for (settings <- maybeSettings) {
+    //   print grant url to console
+    val grantUrl = request.OAuthClientRequest
+        .authorizationLocation(settings.authUri)
+        .setClientId(settings.clientId)
+        .setRedirectURI(settings.redirectUri)
+        .setScope(myargs.scopes mkString " ")
+        .setResponseType("code")
+        .buildQueryMessage()
+        .getLocationUri()    
+    println(s"Please visit:\n\n$grantUrl\n\nAnd paste the code you receive here:\n")
 
-  //   contact server token endpoint
-  val req = request.OAuthClientRequest
-      .tokenLocation(settings.tokenUri)
-      .setGrantType(GrantType.AUTHORIZATION_CODE)
-      .setClientId(settings.clientId)
-      .setClientSecret(settings.clientSecret)
-      .setRedirectURI(settings.redirectUri)
-      .setCode(code)
-      .buildBodyMessage()
-  val oAuthClient = new OAuthClient(new URLConnectionClient())
-  val creds = oAuthClient.accessToken(req).getOAuthToken()
-
-  //   write stored_credentials.json
-  JSONObject(Map(
-    "access_token"  -> creds.getAccessToken(),
-    "refresh_token" -> creds.getRefreshToken(),
-    "scope"         -> creds.getScope(),
-    "expires_in"    -> creds.getExpiresIn()
-  )).toString() #> new java.io.File(myargs.creds) !
+    //   await pasted auth code
+    val code = System.console().readLine()
+    println("Code received. Attemping to trade for access token...")
     
-  println(s"credentials written to ${myargs.creds}")
+    //   contact server token endpoint
+    val req = request.OAuthClientRequest
+        .tokenLocation(settings.tokenUri)
+        .setGrantType(GrantType.AUTHORIZATION_CODE)
+        .setClientId(settings.clientId)
+        .setClientSecret(settings.clientSecret)
+        .setRedirectURI(settings.redirectUri)
+        .setCode(code)
+        .buildBodyMessage()
+    val oAuthClient = new OAuthClient(new URLConnectionClient())
+    val creds = oAuthClient.accessToken(req).getOAuthToken()
+
+    //   write stored_credentials.json
+    val p = new java.io.PrintWriter(myargs.creds)
+    p.write(JSONObject(Map(
+      "access_token"  -> creds.getAccessToken(),
+      "refresh_token" -> creds.getRefreshToken(),
+      "scope"         -> creds.getScope(),
+      "expires_in"    -> creds.getExpiresIn()
+    )).toString())
+    p.close()
+    println(s"\ncredentials written to ${myargs.creds}")
+  }
 }
