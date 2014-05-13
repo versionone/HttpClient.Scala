@@ -20,9 +20,9 @@ object V1Oauth2Api {
   case class Success(body:String) extends HttpResponse
   case class Failure(code:Int, message:String, body:String) extends HttpResponse
   
-  def doGet(url:String, username:String, password:String) = {
+  def get(url:String, username:String, password:String) = {
     new URL(url).openConnection() match {
-      case conn : HttpURLConnection =>
+      case conn : HttpURLConnection => {
         val auth = new sun.misc.BASE64Encoder().encode((username + ":" + password).getBytes())
         conn.setRequestProperty("Authorization", "Basic " + auth); 
         conn.setRequestMethod("GET")
@@ -31,12 +31,13 @@ object V1Oauth2Api {
           Failure(conn.getResponseCode(), conn.getResponseMessage(), getBody())
         else
           Success(getBody())
+      }
     }
   }
   
-  def doPost(url:String, postBody:String, username:String, password:String) = {
+  def post(url:String, postBody:String, username:String, password:String) = {
     new URL(url).openConnection() match {
-      case conn : HttpURLConnection =>
+      case conn : HttpURLConnection => {
         val auth = new sun.misc.BASE64Encoder().encode((username + ":" + password).getBytes())
         conn.setRequestProperty("Authorization", "Basic " + auth); 
         conn.setDoOutput(true)
@@ -49,6 +50,7 @@ object V1Oauth2Api {
           Failure(conn.getResponseCode(), conn.getResponseMessage(), getBody())
         else
           Success(getBody())
+      }
     }
   }
   
@@ -61,7 +63,7 @@ object V1Oauth2Api {
       "redirect_uri": "urn:ietf:wg:oauth:2.0:oob"
       }"""
     
-    doPost(baseurl + "/ClientRegistration.mvc/register", body, username, password) match {
+    post(baseurl + "/ClientRegistration.mvc/register", body, username, password) match {
       case Failure(code, msg, respbody) =>
         sys error s"Unable to register client. $msg\n$respbody"
       case Success(respbody) =>
@@ -80,22 +82,24 @@ object V1Oauth2Api {
   }
   
   def getGrantCode(baseUrl:String, grantUrl:String, username:String, password:String) : String = {
-    doGet(grantUrl, username, password) match {
+    get(grantUrl, username, password) match {
       case Failure(code, msg, txt) =>
         sys error s"Unable to reach grant url $grantUrl: $code $msg\n$txt"
-      case Success(txt) =>
+      case Success(txt) => {
           val x = xml.XML loadString txt
           val action = x \\ "form" \ "@action"
           val auth_request = x \\ "input" \ "@value"
           val postBody = s"""allow=true&auth_request=$auth_request"""
-          doPost(baseUrl + action, postBody, username, password) match {
+          post(baseUrl + action, postBody, username, password) match {
             case Failure(code, msg, txt) =>
               sys error s"Unable to post auth code to $action: $code $msg\n$txt"
-            case Success(txt) =>
+            case Success(txt) => {
               val x = xml.XML loadString txt
               val code = (x \\ "textarea").text
               code
+            }
           }
+      }
     }
   }
   
