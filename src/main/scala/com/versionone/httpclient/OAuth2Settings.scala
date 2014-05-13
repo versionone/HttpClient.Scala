@@ -35,24 +35,38 @@ object OAuth2Settings {
         scope
         )
   }
+  
+  def readSecrets(clientSecrets: String) = {
+    for {
+      Some(JMap(secrets)) <- parseFile(clientSecrets)
+      JMap(installed) = secrets("installed")
+      JStr(clientId) = installed("client_id")
+      JStr(clientSecret) = installed("client_secret")
+      JStr(authUri) = installed("auth_uri")
+      JStr(tokenUri) = installed("token_uri")
+      JStr(serverBase) = installed("server_base_uri")
+      JList(redirectUris) = installed("redirect_uris")
+    } yield {
+      val redirs = for (JStr(url) <- redirectUris) yield url
+      OAuth2Settings(
+        None,
+        clientId,
+        clientSecret,
+        serverBase,
+        tokenUri,
+        authUri,
+        redirs.head
+        )
+    }
+  }
 
   def fromFiles(clientSecrets: String, storedCreds: String) = {
-    val Some(JMap(secrets)) = parseFile(clientSecrets)
-    val JMap(installed) = secrets("installed")
-    val JStr(clientId) = installed("client_id")
-    val JStr(clientSecret) = installed("client_secret")
-    val JStr(authUri) = installed("auth_uri")
-    val JStr(tokenUri) = installed("token_uri")
-    val JStr(serverBase) = installed("server_base_uri")
-    val JList(redirectUris) = installed("redirect_uris")
-    val redirs = for (JStr(url) <- redirectUris) yield url
-    OAuth2Settings(
-      readCreds(storedCreds),
-      clientId,
-      clientSecret,
-      serverBase,
-      tokenUri,
-      authUri,
-      redirs.head)
+    for {
+      Some(secrets) <- readSecrets(clientSecrets)
+      Some(creds) <- readCreds(storedCreds)
+    } yield {
+      secrets.copy(creds=creds)
+    }
+    
   }
 }
