@@ -87,7 +87,7 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>com.versionone.httpclient.sampleApp.SampleApp</mainClass>
+							<mainClass>com.versionone.httpclient.granttool.GrantTool</mainClass>
 						</manifest>
 					</archive>
 					<descriptorRefs>
