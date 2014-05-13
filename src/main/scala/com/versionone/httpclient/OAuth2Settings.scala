@@ -19,11 +19,17 @@ case class OAuth2Settings(
 
 object OAuth2Settings {
 
-  def parseFile(filename: String) = JSON.parseFull(Source.fromFile(filename).mkString)
+  def parseFile(filename: String) = {
+    try
+      JSON.parseFull(Source.fromFile(filename).mkString)
+    catch {
+      case ex:java.io.FileNotFoundException => None
+    }
+  }
 
   def readCreds(storedCreds: String) = {
     for {
-      Some(JMap(creds)) <- parseFile(storedCreds)
+      JMap(creds) <- parseFile(storedCreds)
       JStr(scope) = creds("scope")
       JStr(refreshToken) = creds("refresh_token")
       JStr(accessToken) = creds("access_token")
@@ -38,7 +44,7 @@ object OAuth2Settings {
   
   def readSecrets(clientSecrets: String) = {
     for {
-      Some(JMap(secrets)) <- parseFile(clientSecrets)
+      JMap(secrets) <- parseFile(clientSecrets)
       JMap(installed) = secrets("installed")
       JStr(clientId) = installed("client_id")
       JStr(clientSecret) = installed("client_secret")
@@ -62,11 +68,9 @@ object OAuth2Settings {
 
   def fromFiles(clientSecrets: String, storedCreds: String) = {
     for {
-      Some(secrets) <- readSecrets(clientSecrets)
-      Some(creds) <- readCreds(storedCreds)
+      secrets <- readSecrets(clientSecrets)
     } yield {
-      secrets.copy(creds=creds)
+      secrets.copy(creds=readCreds(storedCreds))
     }
-    
   }
 }
