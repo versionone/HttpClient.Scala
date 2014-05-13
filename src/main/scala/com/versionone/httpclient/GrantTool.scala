@@ -78,15 +78,12 @@ object V1Oauth2Api {
       case Success(txt) => {
         val authRegex = """<input type="hidden" name="auth_request" value="(.*)"/>""".r
         val actionRegex = """action='(.*)'""".r
-        //val x = xml.XML loadString s"""<?xml version="1.0" encoding="utf-8"?>\n$txt"""
         val action = actionRegex findFirstIn txt match {
           case Some(actionRegex(action)) => action
         }
-        //val action = x \\ "form" \ "@action"
         val auth_request = authRegex findFirstIn txt match {
           case Some(authRegex(auth)) => auth
         }
-        //val auth_request = x \\ "input" \ "@value"
         val postBody = s"""allow=true&auth_request=${java.net.URLEncoder.encode(auth_request)}"""
         val postUrl = baseUrl + action
         post(postUrl, postBody, "application/x-www-form-urlencoded", username, password) match {
@@ -94,8 +91,6 @@ object V1Oauth2Api {
             sys error s"Unable to post auth code to $action: $code $msg\n$txt"
           case Success(txt) => {
             val codeRegex = """<textarea id="successcode">(.*)</textarea>""".r
-            //val x = xml.XML loadString txt
-            //val code = (x \\ "textarea").text
             val code = codeRegex findFirstIn txt match {
               case Some(codeRegex(code)) => code
             }
