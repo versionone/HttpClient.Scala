@@ -16,75 +16,86 @@ import scala.io.Source
 
 object V1Oauth2Api {
   
-  def makeSecrets(baseurl:String, username:String, password:String) : Option[Map[String,Any]] = { 
-    val url = new URL(baseurl + "/ClientRegistration.mvc/register")
-    url.openConnection() match {
+  sealed trait HttpResponse
+  case class Success(body:String) extends HttpResponse
+  case class Failure(code:Int, message:String, body:String) extends HttpResponse
+  
+  def doGet(url:String, username:String, password:String) = {
+    new URL(url).openConnection() match {
+      case conn : HttpURLConnection =>
+        val auth = new sun.misc.BASE64Encoder().encode((username + ":" + password).getBytes())
+        conn.setRequestProperty("Authorization", "Basic " + auth); 
+        conn.setRequestMethod("GET")
+        def getBody() = Source.fromInputStream(conn.getInputStream()).mkString
+        if (conn.getResponseCode() != HttpURLConnection.HTTP_OK)
+          Failure(conn.getResponseCode(), conn.getResponseMessage(), getBody())
+        else
+          Success(getBody())
+    }
+  }
+  
+  def doPost(url:String, postBody:String, username:String, password:String) = {
+    new URL(url).openConnection() match {
       case conn : HttpURLConnection =>
         val auth = new sun.misc.BASE64Encoder().encode((username + ":" + password).getBytes())
         conn.setRequestProperty("Authorization", "Basic " + auth); 
         conn.setDoOutput(true)
         conn.setRequestMethod("POST")
-        val datestr = new java.util.Date().toGMTString()
         val writer = new java.io.OutputStreamWriter(conn.getOutputStream())
-        writer.write(s"""{
-          "client_name": "Integration ${new java.util.Date().toGMTString()}",
-          "client_type": "Public",
-          "client_apikey": "",
-          "redirect_uri": "urn:ietf:wg:oauth:2.0:oob"
-          }""")
+        writer.write(postBody)
         writer.close()
+        def getBody() = Source.fromInputStream(conn.getInputStream()).mkString
         if (conn.getResponseCode() != HttpURLConnection.HTTP_OK)
-          sys error s"Unable to register client. ${conn.getResponseMessage()}"
-        else {
-          val body = JSON.parseFull(Source.fromInputStream(conn.getInputStream()).mkString)
-          for {
-            Some(JMap(response)) <- body
-            JStr(client_id) = response("client_id")
-            JStr(client_name) = response("client_name")
-            JStr(redirect_uri) = response("redirect_uri")
-            JStr(client_secret) = response("client_secret")
-            JStr(server_base_uri) = response("server_base_uri")
-            JStr(auth_uri) = response("auth_uri")
-            JStr(token_uri) = response("token_uri")
-          } yield
-            Map("installed" -> response)
-        }
+          Failure(conn.getResponseCode(), conn.getResponseMessage(), getBody())
+        else
+          Success(getBody())
     }
   }
   
-  def getGrantCode(baseUrl:String, grantUrl:String, username:String, password:String) : String = { 
-    val url = new URL(grantUrl)
-    url.openConnection() match {
-      case conn : HttpURLConnection =>
-        val auth = new sun.misc.BASE64Encoder().encode((username + ":" + password).getBytes())
-        conn.setRequestProperty("Authorization", "Basic " + auth); 
-        conn.setRequestMethod("GET")
-        if (conn.getResponseCode() != HttpURLConnection.HTTP_OK)
-          sys error s"Unable to get grant page. ${conn.getResponseMessage()}"
-        else {
-          val body = Source.fromInputStream(conn.getInputStream()).mkString
-          val x = xml.XML loadString body
+  
+  def makeSecrets(baseurl:String, username:String, password:String) : Option[Map[String,Any]] = {
+    val body = s"""{
+      "client_name": "Integration ${new java.util.Date().toGMTString()}",
+      "client_type": "Public",
+      "client_apikey": "",
+      "redirect_uri": "urn:ietf:wg:oauth:2.0:oob"
+      }"""
+    
+    doPost(baseurl + "/ClientRegistration.mvc/register", body, username, password) match {
+      case Failure(code, msg, respbody) =>
+        sys error s"Unable to register client. $msg\n$respbody"
+      case Success(respbody) =>
+        for {
+          Some(JMap(response)) <- JSON.parseFull(respbody)
+          JStr(client_id) = response("client_id")
+          JStr(client_name) = response("client_name")
+          JStr(redirect_uri) = response("redirect_uri")
+          JStr(client_secret) = response("client_secret")
+          JStr(server_base_uri) = response("server_base_uri")
+          JStr(auth_uri) = response("auth_uri")
+          JStr(token_uri) = response("token_uri")
+        } yield
+          Map("installed" -> response)
+    }
+  }
+  
+  def getGrantCode(baseUrl:String, grantUrl:String, username:String, password:String) : String = {
+    doGet(grantUrl, username, password) match {
+      case Failure(code, msg, txt) =>
+        sys error s"Unable to reach grant url $grantUrl: $code $msg\n$txt"
+      case Success(txt) =>
+          val x = xml.XML loadString txt
           val action = x \\ "form" \ "@action"
           val auth_request = x \\ "input" \ "@value"
-          val postUrl = new URL(baseUrl + action)
-          postUrl.openConnection match {
-            case conn : HttpURLConnection =>
-              conn.setRequestProperty("Authorization", "Basic " + auth); 
-              conn.setDoOutput(true)
-              conn.setRequestMethod("POST")
-              val writer = new java.io.OutputStreamWriter(conn.getOutputStream())
-              writer.write(s"""allow=true&auth_request=$auth_request""")
-              writer.close()
-              if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                sys error "freakout"
-              } else {
-                val body = Source.fromInputStream(conn.getInputStream()).mkString
-                val x = xml.XML loadString body
-                val code = (x \\ "textarea").text
-                code
-              }
+          val postBody = s"""allow=true&auth_request=$auth_request"""
+          doPost(baseUrl + action, postBody, username, password) match {
+            case Failure(code, msg, txt) =>
+              sys error s"Unable to post auth code to $action: $code $msg\n$txt"
+            case Success(txt) =>
+              val x = xml.XML loadString txt
+              val code = (x \\ "textarea").text
+              code
           }
-        }
     }
   }
   
