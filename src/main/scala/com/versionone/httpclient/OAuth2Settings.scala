@@ -17,7 +17,7 @@ case class OAuth2Settings(
   authUri: String,
   redirectUri: String)
 
-object OAuth2Settings {
+object OAuth2SettingsFuncs {
 
   def parseFile(filename: String) = {
     try

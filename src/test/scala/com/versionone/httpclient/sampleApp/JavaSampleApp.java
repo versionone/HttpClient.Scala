@@ -9,7 +9,7 @@ import scala.Option;
 public class JavaSampleApp {
 	
 	public static void main(String[] args) {
-		Option<OAuth2Settings> maybeSettings = OAuth2Settings.fromFiles(
+		Option<OAuth2Settings> maybeSettings = OAuth2SettingsFuncs.fromFiles(
 			"client_secrets.json",
 			"stored_credentials.json" );
 		

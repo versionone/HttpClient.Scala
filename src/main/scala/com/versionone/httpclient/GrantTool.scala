@@ -148,7 +148,7 @@ object GrantTool extends App {
   
   
   //   read client secrets
-  val maybeSettings = com.versionone.httpclient.OAuth2Settings.fromFiles(myargs.secrets, myargs.creds)
+  val maybeSettings = com.versionone.httpclient.OAuth2SettingsFuncs.fromFiles(myargs.secrets, myargs.creds)
 
   for (settings <- maybeSettings) {
     //   print grant url to console
